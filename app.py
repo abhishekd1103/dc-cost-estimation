@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 # Page configuration
 st.set_page_config(
-    page_title="DC Power Studies Cost Estimator | Abhishek Diwanji",
+    page_title="DC Power Studies Cost Estimator",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -341,7 +341,7 @@ st.markdown("""
 # Developer Credit
 st.markdown("""
 <div class="developer-credit">
-    🚀 Developed by <strong>Abhishek Diwanji</strong> | Power Systems Engineering Expert
+    🚀 Developed by <strong>Abhishek Diwanji</strong> | Power Systems Studies Department
 </div>
 """, unsafe_allow_html=True)
 
@@ -719,7 +719,8 @@ else:
 st.markdown("""
 <div style="text-align: center; color: #64748b; padding: 2rem; margin-top: 3rem; border-top: 1px solid rgba(100, 116, 139, 0.2);">
     <p style="font-size: 1.1rem; font-weight: 600; color: #14b8a6; margin: 0;">⚡ Data Center Power System Studies Cost Estimator</p>
-    <p style="margin: 0.5rem 0;">🚀 Developed by <strong>Abhishek Diwanji</strong> | Power Systems Engineering Expert</p>
-    <p style="margin: 0; font-size: 0.9rem;">Enhanced Version 2.0 | Professional UI & Advanced Calibration</p>
+    <p style="margin: 0.5rem 0;">🚀 Developed by <strong>Abhishek Diwanji</strong> | Power Systems Engineer</p>
+    <p style="margin: 0; font-size: 0.9rem;">Enhanced Version 2.0 | Professional UI & Advanced Calibration-v1.2</p>
 </div>
 """, unsafe_allow_html=True)
+
