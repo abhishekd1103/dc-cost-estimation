@@ -290,20 +290,6 @@ st.markdown("""
         color: #f1f5f9;
     }
     
-    /* Sidebar Styling */
-    .css-1d391kg {
-        background-color: rgba(15, 20, 25, 0.95);
-        backdrop-filter: blur(10px);
-    }
-    
-    .css-1d391kg .stSelectbox label,
-    .css-1d391kg .stNumberInput label,
-    .css-1d391kg .stTextInput label,
-    .css-1d391kg .stSlider label {
-        color: #e2e8f0;
-        font-weight: 500;
-    }
-    
     /* Button Styling */
     .stButton > button {
         background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
@@ -393,7 +379,7 @@ with st.container():
     col5, col6, col7, col8 = st.columns(4)
     
     with col5:
-        tier_level = st.selectbox("Tier Level", ["Tier I", "Tier II", "Tier III", "Tier IV (Fault Tolerant)"], index=3)
+        tier_level = st.selectbox("Tier Level", ["Tier I", "Tier II", "Tier III", "Tier IV"], index=3)
     with col6:
         delivery_type = st.selectbox("Type of Delivery", ["Standard", "Urgent"])
     with col7:
@@ -404,77 +390,6 @@ with st.container():
     col9, _ = st.columns([1, 3])
     with col9:
         custom_margin = st.number_input("Custom Margins (%)", min_value=0, max_value=30, value=15, step=1)
-
-# Bus Count and Studies Section
-col_left, col_right = st.columns([1, 1])
-
-with col_left:
-    st.markdown("""
-    <div class="section-header">
-        <h2>🔌 Bus Count Estimation</h2>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Bus count calibration
-    bus_calibration = st.slider("Bus Count Calibration Factor", 0.5, 2.0, 1.3, 0.1)
-    
-    # Calculate basic info
-    total_load = it_capacity + mechanical_load + house_load
-    tier_mapping = {"Tier I": 1.5, "Tier II": 1.7, "Tier III": 2.0, "Tier IV (Fault Tolerant)": 2.3}
-    tier_key = "Tier IV" if "Fault Tolerant" in tier_level else tier_level
-    estimated_buses = math.ceil(total_load * tier_mapping[tier_key] * bus_calibration)
-    
-    # Display bus count info
-    st.markdown(f"""
-    <div class="metric-card">
-        <h3>Total Load:</h3>
-        <p class="value">{total_load:.1f} MW</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>Estimated Buses:</h3>
-        <p class="value">{estimated_buses} buses</p>
-        <p class="subtitle">{tier_level} • {tier_mapping[tier_key]} buses/MW • 99.995% uptime</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col_right:
-    st.markdown("""
-    <div class="section-header">
-        <h2>📋 Studies Required</h2>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Studies selection with descriptions
-    studies_selected = {}
-    
-    col_s1, col_s2 = st.columns([1, 4])
-    with col_s1:
-        studies_selected['load_flow'] = st.checkbox("", value=True, key="lf")
-    with col_s2:
-        st.markdown("**Load Flow Study**<br><small>Steady-state voltage and power flow analysis</small>", unsafe_allow_html=True)
-    
-    col_s3, col_s4 = st.columns([1, 4])
-    with col_s3:
-        studies_selected['short_circuit'] = st.checkbox("", value=True, key="sc")
-    with col_s4:
-        st.markdown("**Short Circuit Study**<br><small>Fault current calculations and equipment verification</small>", unsafe_allow_html=True)
-    
-    col_s5, col_s6 = st.columns([1, 4])
-    with col_s5:
-        studies_selected['pdc'] = st.checkbox("", value=True, key="pdc")
-    with col_s6:
-        st.markdown("**Protective Device Coordination**<br><small>Relay coordination and protection settings</small>", unsafe_allow_html=True)
-    
-    col_s7, col_s8 = st.columns([1, 4])
-    with col_s7:
-        studies_selected['arc_flash'] = st.checkbox("", value=True, key="af")
-    with col_s8:
-        st.markdown("**Arc Flash Study**<br><small>Incident energy calculations and PPE requirements</small>", unsafe_allow_html=True)
-    
-    if st.button("Select All", key="select_all"):
-        for key in studies_selected:
-            studies_selected[key] = True
 
 # Calibration Controls (Expandable Section)
 with st.expander("🔧 Calibration Controls", expanded=False):
@@ -523,8 +438,93 @@ with st.expander("🔧 Calibration Controls", expanded=False):
         if st.button("Reset to Defaults", type="secondary"):
             st.experimental_rerun()
 
-# Calculations
-TIER_FACTORS = {"Tier I": 1.0, "Tier II": 1.2, "Tier III": 1.5, "Tier IV": 2.0}
+# Bus Count and Studies Section
+col_left, col_right = st.columns([1, 1])
+
+with col_left:
+    st.markdown("""
+    <div class="section-header">
+        <h2>🔌 Bus Count Estimation</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Bus count calibration
+    bus_calibration = st.slider("Bus Count Calibration Factor", 0.5, 2.0, 1.3, 0.1)
+
+with col_right:
+    st.markdown("""
+    <div class="section-header">
+        <h2>📋 Studies Required</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Studies selection with descriptions
+    studies_selected = {}
+    
+    col_s1, col_s2 = st.columns([1, 4])
+    with col_s1:
+        studies_selected['load_flow'] = st.checkbox("", value=True, key="lf")
+    with col_s2:
+        st.markdown("**Load Flow Study**<br><small>Steady-state voltage and power flow analysis</small>", unsafe_allow_html=True)
+    
+    col_s3, col_s4 = st.columns([1, 4])
+    with col_s3:
+        studies_selected['short_circuit'] = st.checkbox("", value=True, key="sc")
+    with col_s4:
+        st.markdown("**Short Circuit Study**<br><small>Fault current calculations and equipment verification</small>", unsafe_allow_html=True)
+    
+    col_s5, col_s6 = st.columns([1, 4])
+    with col_s5:
+        studies_selected['pdc'] = st.checkbox("", value=True, key="pdc")
+    with col_s6:
+        st.markdown("**Protective Device Coordination**<br><small>Relay coordination and protection settings</small>", unsafe_allow_html=True)
+    
+    col_s7, col_s8 = st.columns([1, 4])
+    with col_s7:
+        studies_selected['arc_flash'] = st.checkbox("", value=True, key="af")
+    with col_s8:
+        st.markdown("**Arc Flash Study**<br><small>Incident energy calculations and PPE requirements</small>", unsafe_allow_html=True)
+    
+    if st.button("Select All", key="select_all"):
+        for key in studies_selected:
+            studies_selected[key] = True
+
+# Fixed calculations - No more KeyError!
+total_load = it_capacity + mechanical_load + house_load
+
+# FIXED: Correct tier mapping that matches selectbox exactly
+tier_mapping = {
+    "Tier I": 1.5, 
+    "Tier II": 1.7, 
+    "Tier III": 2.0, 
+    "Tier IV": 2.3
+}
+
+estimated_buses = math.ceil(total_load * tier_mapping[tier_level] * bus_calibration)
+
+# Display bus count info
+with col_left:
+    st.markdown(f"""
+    <div class="metric-card">
+        <h3>Total Load:</h3>
+        <p class="value">{total_load:.1f} MW</p>
+    </div>
+    
+    <div class="metric-card">
+        <h3>Estimated Buses:</h3>
+        <p class="value">{estimated_buses} buses</p>
+        <p class="subtitle">{tier_level} • {tier_mapping[tier_level]} buses/MW • 99.995% uptime</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# FIXED: Correct TIER_FACTORS that matches selectbox exactly
+TIER_FACTORS = {
+    "Tier I": 1.0, 
+    "Tier II": 1.2, 
+    "Tier III": 1.5, 
+    "Tier IV": 2.0
+}
+
 STUDIES_DATA = {
     'load_flow': {'name': 'Load Flow Study', 'base_hours_per_bus': 0.8, 'factor': load_flow_factor, 'emoji': '⚡'},
     'short_circuit': {'name': 'Short Circuit Study', 'base_hours_per_bus': 1.0, 'factor': short_circuit_factor, 'emoji': '⚡'},
@@ -532,8 +532,8 @@ STUDIES_DATA = {
     'arc_flash': {'name': 'Arc Flash Study', 'base_hours_per_bus': 1.2, 'factor': arc_flash_factor, 'emoji': '🔥'}
 }
 
-# Calculate costs
-tier_complexity = TIER_FACTORS[tier_key]
+# Calculate costs - FIXED: Use tier_level directly
+tier_complexity = TIER_FACTORS[tier_level]
 total_study_hours = 0
 total_study_cost = 0
 study_results = {}
@@ -606,7 +606,7 @@ with col3:
     st.markdown(f"""
     <div class="metric-card">
         <h3>Tier Level</h3>
-        <p class="value">{tier_level.replace(' (Fault Tolerant)', '')}</p>
+        <p class="value">{tier_level}</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -675,14 +675,45 @@ if study_results:
     </div>
     """, unsafe_allow_html=True)
 
-# Simple chart using Streamlit
-if study_results:
+    # Simple chart using Streamlit
     st.markdown("### 📊 Cost Distribution")
     chart_data = pd.DataFrame({
         'Study': [study['name'] for study in study_results.values()],
         'Cost': [study['total_cost'] for study in study_results.values()]
     })
     st.bar_chart(chart_data.set_index('Study'))
+
+    # Final cost summary
+    st.markdown(f"""
+    <div class="results-container">
+        <h3 style="color: #14b8a6; text-align: center; margin-bottom: 2rem;">Total Project Cost Summary</h3>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center;">
+            <div>
+                <h4 style="color: #06b6d4; margin: 0;">Studies Cost</h4>
+                <p style="color: #f1f5f9; font-size: 1.2rem; font-weight: 600; margin: 0.5rem 0;">₹{total_study_cost:,.0f}</p>
+            </div>
+            <div>
+                <h4 style="color: #06b6d4; margin: 0;">Meetings Cost</h4>
+                <p style="color: #f1f5f9; font-size: 1.2rem; font-weight: 600; margin: 0.5rem 0;">₹{total_meeting_cost:,.0f}</p>
+            </div>
+            <div>
+                <h4 style="color: #06b6d4; margin: 0;">Report Cost</h4>
+                <p style="color: #f1f5f9; font-size: 1.2rem; font-weight: 600; margin: 0.5rem 0;">₹{report_cost:,.0f}</p>
+            </div>
+            <div>
+                <h4 style="color: #06b6d4; margin: 0;">Margin ({custom_margin}%)</h4>
+                <p style="color: #f1f5f9; font-size: 1.2rem; font-weight: 600; margin: 0.5rem 0;">₹{total_cost - subtotal:,.0f}</p>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 2rem; padding: 2rem; background: rgba(20, 184, 166, 0.1); border-radius: 12px;">
+            <h2 style="color: #14b8a6; margin: 0;">Total Project Cost</h2>
+            <p style="color: #14b8a6; font-size: 3rem; font-weight: 700; margin: 1rem 0;">₹{total_cost:,.0f}</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+else:
+    st.warning("⚠️ No studies selected. Please select at least one study type from the sidebar.")
 
 # Footer
 st.markdown("""
