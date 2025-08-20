@@ -1,11 +1,7 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 import math
 from datetime import datetime, timedelta
-import base64
-from io import BytesIO
 
 # Page configuration
 st.set_page_config(
@@ -41,6 +37,21 @@ st.markdown("""
         border-radius: 8px;
         padding: 15px;
         margin: 20px 0;
+    }
+    .cost-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #1f4e79;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .study-item {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border-left: 3px solid #2e8b57;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -113,10 +124,10 @@ TIER_FACTORS = {"Tier I": 1.0, "Tier II": 1.2, "Tier III": 1.5, "Tier IV": 2.0}
 BUS_PER_MW = {"Tier I": 1.5, "Tier II": 1.7, "Tier III": 2.0, "Tier IV": 2.3}
 
 STUDIES_DATA = {
-    'load_flow': {'name': 'Load Flow Study', 'base_hours_per_bus': 0.8, 'complexity': 'Medium'},
-    'short_circuit': {'name': 'Short Circuit Study', 'base_hours_per_bus': 1.0, 'complexity': 'Medium-High'},
-    'pdc': {'name': 'Protective Device Coordination', 'base_hours_per_bus': 1.5, 'complexity': 'High'},
-    'arc_flash': {'name': 'Arc Flash Study', 'base_hours_per_bus': 1.2, 'complexity': 'High'}
+    'load_flow': {'name': 'Load Flow Study', 'base_hours_per_bus': 0.8, 'complexity': 'Medium', 'emoji': '⚡'},
+    'short_circuit': {'name': 'Short Circuit Study', 'base_hours_per_bus': 1.0, 'complexity': 'Medium-High', 'emoji': '⚡'},
+    'pdc': {'name': 'Protective Device Coordination', 'base_hours_per_bus': 1.5, 'complexity': 'High', 'emoji': '🔧'},
+    'arc_flash': {'name': 'Arc Flash Study', 'base_hours_per_bus': 1.2, 'complexity': 'High', 'emoji': '🔥'}
 }
 
 RATES = {
@@ -144,7 +155,8 @@ def calculate_project_cost():
             'report_format': report_format
         },
         'studies': {},
-        'costs': {}
+        'costs': {},
+        'timeline': {}
     }
     
     # Calculate study costs
@@ -172,7 +184,14 @@ def calculate_project_cost():
             
             results['studies'][study_key] = {
                 'name': study_data['name'],
+                'emoji': study_data['emoji'],
                 'hours': study_hours,
+                'senior_hours': senior_hours,
+                'mid_hours': mid_hours,
+                'junior_hours': junior_hours,
+                'senior_cost': senior_cost,
+                'mid_cost': mid_cost,
+                'junior_cost': junior_cost,
                 'total_cost': study_total_cost,
                 'complexity': study_data['complexity']
             }
@@ -183,13 +202,25 @@ def calculate_project_cost():
     subtotal = total_study_cost + meeting_cost + report_cost
     total_cost = subtotal * (1 + custom_margin/100)
     
+    # Timeline calculation
+    base_duration = max(4, total_study_hours / 8)
+    timeline_days = math.ceil(base_duration * (0.8 if delivery_type == "Standard" else 0.6))
+    end_date = start_date + timedelta(days=timeline_days)
+    
     results['costs'] = {
         'total_study_cost': total_study_cost,
         'meeting_cost': meeting_cost,
         'report_cost': report_cost,
         'subtotal': subtotal,
+        'margin_amount': subtotal * (custom_margin/100),
         'total_cost': total_cost,
         'total_hours': total_study_hours
+    }
+    
+    results['timeline'] = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'duration_days': timeline_days
     }
     
     return results
@@ -200,75 +231,264 @@ results = calculate_project_cost()
 # Display results
 st.header("📊 Cost Analysis Results")
 
-# Key metrics
+# Key metrics in columns
 col1, col2, col3, col4 = st.columns(4)
+
 with col1:
-    st.metric("Total Project Cost", f"₹{results['costs']['total_cost']:,.0f}")
+    st.markdown(f"""
+    <div class="cost-card">
+        <h3 style="color: #1f4e79; margin: 0;">💰 Total Cost</h3>
+        <h2 style="color: #2e8b57; margin: 5px 0;">₹{results['costs']['total_cost']:,.0f}</h2>
+        <p style="margin: 0; color: #666;">+{custom_margin}% margin</p>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col2:
-    st.metric("Total Hours", f"{results['costs']['total_hours']:.0f}")
+    st.markdown(f"""
+    <div class="cost-card">
+        <h3 style="color: #1f4e79; margin: 0;">⏱️ Total Hours</h3>
+        <h2 style="color: #2e8b57; margin: 5px 0;">{results['costs']['total_hours']:.0f}</h2>
+        <p style="margin: 0; color: #666;">{len(results['studies'])} studies</p>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col3:
-    st.metric("Estimated Buses", f"{results['project_info']['estimated_buses']}")
+    st.markdown(f"""
+    <div class="cost-card">
+        <h3 style="color: #1f4e79; margin: 0;">📅 Duration</h3>
+        <h2 style="color: #2e8b57; margin: 5px 0;">{results['timeline']['duration_days']}</h2>
+        <p style="margin: 0; color: #666;">days</p>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col4:
-    st.metric("Studies Selected", f"{len(results['studies'])}")
+    st.markdown(f"""
+    <div class="cost-card">
+        <h3 style="color: #1f4e79; margin: 0;">🔌 Buses</h3>
+        <h2 style="color: #2e8b57; margin: 5px 0;">{results['project_info']['estimated_buses']}</h2>
+        <p style="margin: 0; color: #666;">estimated</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# Charts
+# Study breakdown
 if results['studies']:
-    col1, col2 = st.columns(2)
+    st.header("📋 Study-wise Breakdown")
     
-    with col1:
-        st.subheader("💰 Cost Breakdown by Study")
-        study_names = [study['name'] for study in results['studies'].values()]
-        study_costs = [study['total_cost'] for study in results['studies'].values()]
-        
-        fig_pie = px.pie(values=study_costs, names=study_names, title="Study-wise Cost Distribution")
-        st.plotly_chart(fig_pie, use_container_width=True)
+    for study_key, study in results['studies'].items():
+        st.markdown(f"""
+        <div class="study-item">
+            <h4>{study['emoji']} {study['name']}</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>Complexity:</strong> {study['complexity']}<br>
+                    <strong>Hours:</strong> {study['hours']:.1f} 
+                    <small>(Sr: {study['senior_hours']:.1f}, Mid: {study['mid_hours']:.1f}, Jr: {study['junior_hours']:.1f})</small>
+                </div>
+                <div style="text-align: right;">
+                    <h3 style="color: #2e8b57; margin: 0;">₹{study['total_cost']:,.0f}</h3>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
-    with col2:
-        st.subheader("⏱️ Hours by Study Type")
-        study_hours = [study['hours'] for study in results['studies'].values()]
-        
-        fig_bar = px.bar(x=study_names, y=study_hours, title="Hours by Study Type")
-        st.plotly_chart(fig_bar, use_container_width=True)
-
-# Detailed breakdown
-st.header("📋 Detailed Study Breakdown")
-if results['studies']:
+    # Cost breakdown table
+    st.subheader("💰 Detailed Cost Breakdown")
+    
     breakdown_data = []
     for study_key, study in results['studies'].items():
         breakdown_data.append({
-            'Study Type': study['name'],
+            'Study Type': f"{study['emoji']} {study['name']}",
             'Complexity': study['complexity'],
-            'Hours': f"{study['hours']:.1f}",
-            'Cost': f"₹{study['total_cost']:,.0f}"
+            'Total Hours': f"{study['hours']:.1f}",
+            'Senior Cost': f"₹{study['senior_cost']:,.0f}",
+            'Mid Cost': f"₹{study['mid_cost']:,.0f}",
+            'Junior Cost': f"₹{study['junior_cost']:,.0f}",
+            'Total Cost': f"₹{study['total_cost']:,.0f}"
         })
     
     df = pd.DataFrame(breakdown_data)
     st.dataframe(df, use_container_width=True, hide_index=True)
 
+else:
+    st.warning("⚠️ No studies selected. Please select at least one study type from the sidebar.")
+
+# Additional costs breakdown
+st.subheader("💼 Additional Cost Components")
+
+additional_col1, additional_col2, additional_col3 = st.columns(3)
+
+with additional_col1:
+    st.markdown(f"""
+    <div class="study-item">
+        <h4>🤝 Client Meetings</h4>
+        <p><strong>{client_meetings} meetings × ₹8,000</strong></p>
+        <h3 style="color: #2e8b57; margin: 0;">₹{results['costs']['meeting_cost']:,.0f}</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+with additional_col2:
+    st.markdown(f"""
+    <div class="study-item">
+        <h4>📄 Report Preparation</h4>
+        <p><strong>{report_format}</strong></p>
+        <h3 style="color: #2e8b57; margin: 0;">₹{results['costs']['report_cost']:,.0f}</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+with additional_col3:
+    st.markdown(f"""
+    <div class="study-item">
+        <h4>📈 Profit Margin</h4>
+        <p><strong>{custom_margin}% on subtotal</strong></p>
+        <h3 style="color: #2e8b57; margin: 0;">₹{results['costs']['margin_amount']:,.0f}</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Timeline information
+st.header("📅 Project Timeline")
+
+timeline_col1, timeline_col2 = st.columns(2)
+
+with timeline_col1:
+    st.markdown(f"""
+    <div class="cost-card">
+        <h4>📅 Project Schedule</h4>
+        <p><strong>Start Date:</strong> {results['timeline']['start_date']}</p>
+        <p><strong>End Date:</strong> {results['timeline']['end_date']}</p>
+        <p><strong>Duration:</strong> {results['timeline']['duration_days']} days</p>
+        <p><strong>Delivery Type:</strong> {delivery_type}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with timeline_col2:
+    st.markdown(f"""
+    <div class="cost-card">
+        <h4>👥 Resource Allocation</h4>
+        <p><strong>Senior Engineers:</strong> {results['costs']['total_hours'] * 0.20:.1f} hours (20%)</p>
+        <p><strong>Mid-level Engineers:</strong> {results['costs']['total_hours'] * 0.30:.1f} hours (30%)</p>
+        <p><strong>Junior Engineers:</strong> {results['costs']['total_hours'] * 0.50:.1f} hours (50%)</p>
+    </div>
+    """, unsafe_allow_html=True)
+
 # Export section
 st.header("💾 Export Options")
 
-# Simple CSV export
-if st.button("📊 Download Summary Report"):
+# Create comprehensive CSV data
+if st.button("📊 Generate Complete Report", type="primary"):
+    # Project summary
     summary_data = {
-        'Parameter': ['Project Name', 'Client', 'Total Load (MW)', 'Total Cost', 'Total Hours', 'Studies Count'],
+        'Parameter': [
+            'Project Name', 'Client Name', 'Start Date', 'End Date', 'Duration (Days)',
+            'IT Capacity (MW)', 'Mechanical Load (MW)', 'House Load (MW)', 'Total Load (MW)',
+            'Tier Level', 'Delivery Type', 'Estimated Buses',
+            'Total Study Cost', 'Meeting Cost', 'Report Cost', 'Margin Amount', 'Total Project Cost',
+            'Total Hours', 'Studies Selected', 'Generated By', 'Generated On'
+        ],
         'Value': [
-            project_name,
-            client_name or 'Not Specified',
-            results['project_info']['total_load'],
+            project_name, client_name or 'Not Specified', 
+            results['timeline']['start_date'], results['timeline']['end_date'], results['timeline']['duration_days'],
+            it_capacity, mechanical_load, house_load, results['project_info']['total_load'],
+            tier_level, delivery_type, results['project_info']['estimated_buses'],
+            f"₹{results['costs']['total_study_cost']:,.0f}",
+            f"₹{results['costs']['meeting_cost']:,.0f}",
+            f"₹{results['costs']['report_cost']:,.0f}",
+            f"₹{results['costs']['margin_amount']:,.0f}",
             f"₹{results['costs']['total_cost']:,.0f}",
             f"{results['costs']['total_hours']:.0f}",
-            len(results['studies'])
+            len(results['studies']),
+            'Abhishek Diwanji - Power Systems Expert',
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         ]
     }
     
     csv_data = pd.DataFrame(summary_data).to_csv(index=False)
+    
     st.download_button(
-        label="📥 Download CSV File",
+        label="📥 Download Complete Report (CSV)",
         data=csv_data,
-        file_name=f"DC_Cost_Summary_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-        mime="text/csv"
+        file_name=f"DC_Complete_Report_{project_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+        mime="text/csv",
+        help="Download comprehensive project report with all calculations"
     )
+
+# Quick summary download
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("📋 Quick Summary"):
+        quick_data = {
+            'Item': ['Total Cost', 'Total Hours', 'Duration', 'Studies', 'Buses'],
+            'Value': [
+                f"₹{results['costs']['total_cost']:,.0f}",
+                f"{results['costs']['total_hours']:.0f}",
+                f"{results['timeline']['duration_days']} days",
+                len(results['studies']),
+                results['project_info']['estimated_buses']
+            ]
+        }
+        
+        quick_csv = pd.DataFrame(quick_data).to_csv(index=False)
+        st.download_button(
+            label="📥 Download Quick Summary",
+            data=quick_csv,
+            file_name=f"DC_Quick_Summary_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+            mime="text/csv"
+        )
+
+with col2:
+    if st.button("📊 Study Breakdown"):
+        if results['studies']:
+            study_data = []
+            for study in results['studies'].values():
+                study_data.append({
+                    'Study': study['name'],
+                    'Complexity': study['complexity'],
+                    'Hours': f"{study['hours']:.1f}",
+                    'Cost': f"₹{study['total_cost']:,.0f}"
+                })
+            
+            study_csv = pd.DataFrame(study_data).to_csv(index=False)
+            st.download_button(
+                label="📥 Download Study Breakdown",
+                data=study_csv,
+                file_name=f"DC_Study_Breakdown_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime="text/csv"
+            )
+
+# Technical specifications
+with st.expander("🔧 Technical Specifications & Methodology"):
+    st.markdown("""
+    ### 📊 Calculation Methodology
+    
+    **Cost Calculation Formula:**
+    ```
+    Study_Cost = Bus_Count × Base_Hours_per_Bus × Tier_Complexity_Factor × Rate_Structure
+    Total_Project_Cost = (Study_Costs + Additional_Costs) × (1 + Margin%)
+    ```
+    
+    **Rate Structure (Indian Market 2025):**
+    - Senior Engineer: ₹1,200/hour (20% allocation)
+    - Mid-level Engineer: ₹650/hour (30% allocation)
+    - Junior Engineer: ₹350/hour (50% allocation)
+    
+    **Study Complexity Factors:**
+    - Load Flow: 0.8 hours/bus (Medium complexity)
+    - Short Circuit: 1.0 hours/bus (Medium-High complexity)
+    - PDC: 1.5 hours/bus (High complexity)
+    - Arc Flash: 1.2 hours/bus (High complexity)
+    
+    **Tier Multipliers:**
+    - Tier I: 1.0x, Tier II: 1.2x, Tier III: 1.5x, Tier IV: 2.0x
+    
+    **Additional Costs:**
+    - Client Meetings: ₹8,000 per meeting
+    - Report Preparation: ₹15,000 (base) × format multiplier
+    
+    **References:**
+    - IEEE 1584-2018: Arc Flash Standards
+    - IEC 60909: Short Circuit Calculations
+    - Industry salary surveys and consultation rates (2025)
+    """)
 
 # Footer
 st.markdown("---")
@@ -277,6 +497,6 @@ st.markdown("""
     <p><b>⚡ Data Center Power System Studies Cost Estimator</b></p>
     <p>🚀 Developed by <b>Abhishek Diwanji</b> | Power Systems Engineering Expert</p>
     <p>📧 For professional consulting, custom tools, and technical support</p>
-    <p><i>Simplified Version 1.0 | Core Analytics Features</i></p>
+    <p><i>Reliable Version 1.0 | No External Dependencies</i></p>
 </div>
 """, unsafe_allow_html=True)
