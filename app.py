@@ -333,7 +333,7 @@ st.markdown("""
 st.markdown("""
 <div class="main-header">
     <h1>⚡ Data Center Power System Studies</h1>
-    <h2>Professional Cost Estimation Dashboard</h2>
+    <h2>PSS Cost Estimation Dashboard</h2>
     <p>Advanced Engineering Tool for Load Flow, Short Circuit, PDC & Arc Flash Studies</p>
 </div>
 """, unsafe_allow_html=True)
@@ -723,4 +723,5 @@ st.markdown("""
     <p style="margin: 0; font-size: 0.9rem;">Enhanced Version 2.0 | Professional UI & Advanced Calibration-v1.2</p>
 </div>
 """, unsafe_allow_html=True)
+
 
