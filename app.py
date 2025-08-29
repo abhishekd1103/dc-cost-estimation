@@ -405,9 +405,9 @@ with st.expander("🔧 Calibration Controls", expanded=False):
     
     with cal_col1:
         st.markdown("#### Hourly Rates (₹)")
-        senior_rate = st.number_input("Senior Engineer", min_value=800, max_value=2000, value=1200, step=50)
-        mid_rate = st.number_input("Mid-level Engineer", min_value=400, max_value=1000, value=650, step=25)
-        junior_rate = st.number_input("Junior Engineer", min_value=200, max_value=600, value=350, step=25)
+        senior_rate = st.number_input("Senior Engineer", min_value=800, max_value=4000, value=2200, step=50)
+        mid_rate = st.number_input("Mid-level Engineer", min_value=400, max_value=3000, value=1200, step=25)
+        junior_rate = st.number_input("Junior Engineer", min_value=200, max_value=200, value=800, step=25)
     
     with cal_col2:
         st.markdown("#### Study Complexity Factors")
@@ -723,5 +723,6 @@ st.markdown("""
     <p style="margin: 0; font-size: 0.9rem;">Enhanced Version 2.0 | Professional UI & Advanced Calibration-v1.2</p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
